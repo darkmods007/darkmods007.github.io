@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aura Vision</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;1,500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0a12;
+      --bg-secondary: #12121f;
+      --text-primary: #e8e6f0;
+      --text-secondary: #a9a5c0;
+      --accent: #9d7cff;
+      --accent-glow: rgba(157, 124, 255, 0.4);
+    }
+
+    .light {
+      --bg-primary: #f5f3fa;
+      --bg-secondary: #ffffff;
+      --text-primary: #1a1a2e;
+      --text-secondary: #5a5670;
+      --accent: #7c5ce7;
+      --accent-glow: rgba(124, 92, 231, 0.3);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Cormorant Garamond', serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .cosmic-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(108, 92, 231, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(255, 107, 157, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(78, 205, 196, 0.05) 0%, transparent 60%);
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(2rem, 8vw, 3rem);
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      background: linear-gradient(135deg, #9d7cff 0%, #ff6b9d 50%, #4ecdc4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      font-style: italic;
+      letter-spacing: 0.1em;
+    }
+
+    .upload-zone {
+      width: 100%;
+      max-width: 400px;
+      aspect-ratio: 1;
+      border: 2px dashed var(--accent);
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.4s ease;
+      background: var(--bg-secondary);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .upload-zone:hover {
+      border-color: #ff6b9d;
+      box-shadow: 0 0 40px var(--accent-glow);
+      transform: scale(1.02);
+    }
+
+    .upload-zone.has-image {
+      border-style: solid;
+    }
+
+    .upload-zone input {
+      display: none;
+    }
+
+    .upload-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      opacity: 0.8;
+    }
+
+    .upload-text {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      text-align: center;
+      padding: 0 20px;
+    }
+
+    .preview-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    .generate-btn {
+      margin-top: 30px;
+      padding: 16px 48px;
+      font-family: 'Cinzel', serif;
+      font-size: 1.1rem;
+      letter-spacing: 0.15em;
+      border: none;
+      border-radius: 50px;
+      background: linear-gradient(135deg, #9d7cff 0%, #7c5ce7 100%);
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px var(--accent-glow);
+      text-transform: uppercase;
+    }
+
+    .generate-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px var(--accent-glow);
+    }
+
+    .generate-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Aura Result */
+    .aura-result {
+      display: none;
+      width: 100%;
+      margin-top: 40px;
+      animation: fadeInUp 0.8s ease;
+    }
+
+    .aura-result.visible {
+      display: block;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .aura-display {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      margin: 0 auto 30px;
+    }
+
+    .aura-ring {
+      position: absolute;
+      border-radius: 50%;
+      animation: pulse 3s ease-in-out infinite;
+    }
+
+    .aura-ring-1 {
+      inset: 0;
+      border: 3px solid var(--aura-color-1, #9d7cff);
+      box-shadow: 0 0 30px var(--aura-color-1, #9d7cff),
+                  inset 0 0 30px var(--aura-color-1, #9d7cff);
+      animation-delay: 0s;
+    }
+
+    .aura-ring-2 {
+      inset: -20px;
+      border: 2px solid var(--aura-color-2, #ff6b9d);
+      box-shadow: 0 0 25px var(--aura-color-2, #ff6b9d);
+      animation-delay: 0.5s;
+    }
+
+    .aura-ring-3 {
+      inset: -40px;
+      border: 1px solid var(--aura-color-3, #4ecdc4);
+      box-shadow: 0 0 20px var(--aura-color-3, #4ecdc4);
+      animation-delay: 1s;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 0.6;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.05);
+      }
+    }
+
+    .aura-center-image {
+      position: absolute;
+      inset: 20px;
+      border-radius: 50%;
+      object-fit: cover;
+      z-index: 2;
+    }
+
+    .aura-colors {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .color-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .color-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    .color-name {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      text-transform: capitalize;
+    }
+
+    .aura-description {
+      background: var(--bg-secondary);
+      border-radius: 20px;
+      padding: 30px;
+      border: 1px solid rgba(157, 124, 255, 0.2);
+    }
+
+    .aura-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.5rem;
+      text-align: center;
+      margin-bottom: 20px;
+      color: var(--accent);
+    }
+
+    .aura-text {
+      font-size: 1.15rem;
+      line-height: 1.8;
+      color: var(--text-primary);
+      text-align: center;
+    }
+
+    /* Loading State */
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 10, 18, 0.9);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    .loading-overlay.visible {
+      display: flex;
+    }
+
+    .loading-orb {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #9d7cff, #ff6b9d, #4ecdc4);
+      animation: orbFloat 2s ease-in-out infinite, orbRotate 4s linear infinite;
+      box-shadow: 0 0 60px rgba(157, 124, 255, 0.5);
+    }
+
+    @keyframes orbFloat {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-20px) scale(1.1); }
+    }
+
+    @keyframes orbRotate {
+      from { filter: hue-rotate(0deg); }
+      to { filter: hue-rotate(360deg); }
+    }
+
+    .loading-text {
+      margin-top: 30px;
+      font-family: 'Cinzel', serif;
+      font-size: 1.2rem;
+      letter-spacing: 0.2em;
+      color: var(--text-secondary);
+    }
+
+    .reset-btn {
+      margin-top: 30px;
+      padding: 12px 32px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      border: 1px solid var(--text-secondary);
+      border-radius: 30px;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .reset-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Error state */
+    .error-message {
+      display: none;
+      background: rgba(255, 107, 107, 0.15);
+      border: 1px solid rgba(255, 107, 107, 0.4);
+      color: #ff6b6b;
+      padding: 16px 24px;
+      border-radius: 12px;
+      margin-top: 20px;
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .error-message.visible {
+      display: block;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 30px 16px;
+      }
+
+      .upload-zone {
+        max-width: 300px;
+      }
+
+      .aura-display {
+        width: 220px;
+        height: 220px;
+      }
+
+      .aura-ring-2 { inset: -15px; }
+      .aura-ring-3 { inset: -30px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="cosmic-bg"></div>
+
+  <div class="container">
+    <header>
+      <h1>Aura Vision</h1>
+      <p class="subtitle">Révélez l'énergie de votre être</p>
+    </header>
+
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="fileInput" accept="image/*">
+      <span class="upload-icon">✧</span>
+      <p class="upload-text">Déposez votre photo ici<br>ou cliquez pour sélectionner</p>
+    </div>
+
+    <button class="generate-btn" id="generateBtn" disabled>Révéler mon Aura</button>
+
+    <div class="error-message" id="errorMessage"></div>
+
+    <div class="aura-result" id="auraResult">
+      <div class="aura-display" id="auraDisplay">
+        <div class="aura-ring aura-ring-3"></div>
+        <div class="aura-ring aura-ring-2"></div>
+        <div class="aura-ring aura-ring-1"></div>
+        <img class="aura-center-image" id="auraCenterImage" src="" alt="Votre photo">
+      </div>
+
+      <div class="aura-colors" id="auraColors"></div>
+
+      <div class="aura-description">
+        <h2 class="aura-title" id="auraTitle">Votre Aura</h2>
+        <p class="aura-text" id="auraText"></p>
+      </div>
+
+      <button class="reset-btn" id="resetBtn">Nouvelle lecture</button>
+    </div>
+  </div>
+
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-orb"></div>
+    <p class="loading-text">Lecture de votre aura...</p>
+  </div>
+
+  <script>
+    // Dark/Light mode detection
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      document.documentElement.classList.add('light');
+    }
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', event => {
+      if (event.matches) {
+        document.documentElement.classList.add('light');
+      } else {
+        document.documentElement.classList.remove('light');
+      }
+    });
+
+    // Elements
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+    const generateBtn = document.getElementById('generateBtn');
+    const auraResult = document.getElementById('auraResult');
+    const auraDisplay = document.getElementById('auraDisplay');
+    const auraCenterImage = document.getElementById('auraCenterImage');
+    const auraColors = document.getElementById('auraColors');
+    const auraTitle = document.getElementById('auraTitle');
+    const auraText = document.getElementById('auraText');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const errorMessage = document.getElementById('errorMessage');
+    const resetBtn = document.getElementById('resetBtn');
+
+    let selectedFile = null;
+    let previewUrl = null;
+
+    // Color mapping for aura
+    const auraColorMap = {
+      violet: '#9d7cff',
+      purple: '#9d7cff',
+      pourpre: '#9d7cff',
+      rose: '#ff6b9d',
+      pink: '#ff6b9d',
+      bleu: '#5c9eff',
+      blue: '#5c9eff',
+      turquoise: '#4ecdc4',
+      cyan: '#4ecdc4',
+      vert: '#6bff9d',
+      green: '#6bff9d',
+      jaune: '#ffd93d',
+      yellow: '#ffd93d',
+      or: '#ffc107',
+      gold: '#ffc107',
+      orange: '#ff9f43',
+      rouge: '#ff6b6b',
+      red: '#ff6b6b',
+      blanc: '#f0f0ff',
+      white: '#f0f0ff',
+      argent: '#c0c0d0',
+      silver: '#c0c0d0',
+      indigo: '#6c5ce7'
+    };
+
+    // Upload handling
+    uploadZone.addEventListener('click', () => fileInput.click());
+
+    uploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadZone.style.borderColor = '#ff6b9d';
+    });
+
+    uploadZone.addEventListener('dragleave', () => {
+      uploadZone.style.borderColor = '';
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.style.borderColor = '';
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        handleFile(file);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        handleFile(file);
+      }
+    });
+
+    function handleFile(file) {
+      selectedFile = file;
+      previewUrl = URL.createObjectURL(file);
+
+      uploadZone.innerHTML = `<img class="preview-image" src="${previewUrl}" alt="Preview">`;
+      uploadZone.classList.add('has-image');
+      generateBtn.disabled = false;
+      errorMessage.classList.remove('visible');
+      auraResult.classList.remove('visible');
+    }
+
+    // Register handler for aura analysis
+    window.Poe.registerHandler('aura-handler', (result) => {
+      const msg = result.responses[0];
+
+      if (msg.status === 'error') {
+        loadingOverlay.classList.remove('visible');
+        showError(msg.statusText || 'Une erreur est survenue lors de la lecture.');
+        return;
+      }
+
+      if (msg.status === 'complete') {
+        loadingOverlay.classList.remove('visible');
+        parseAndDisplayAura(msg.content);
+      }
+    });
+
+    // Generate aura
+    generateBtn.addEventListener('click', async () => {
+      if (!selectedFile) return;
+
+      errorMessage.classList.remove('visible');
+      loadingOverlay.classList.add('visible');
+
+      const prompt = `Analyse cette photo et génère une lecture d'aura mystique et poétique.
+
+Tu dois répondre UNIQUEMENT avec un JSON valide dans ce format exact (pas de texte avant ou après):
+{
+  "title": "Titre poétique de l'aura (ex: 'Aura de Lumière Céleste')",
+  "colors": ["couleur1", "couleur2", "couleur3"],
+  "description": "Description poétique de 3-4 phrases sur l'énergie, la personnalité et le chemin spirituel de la personne."
+}
+
+Les couleurs doivent être parmi: violet, rose, bleu, turquoise, vert, jaune, or, orange, rouge, blanc, argent, indigo.
+
+Base ton analyse sur l'impression générale, les couleurs, l'expression et l'atmosphère de la photo.`;
+
+      try {
+        await window.Poe.sendUserMessage(`@GPT-5.1 ${prompt}`, {
+          attachments: [selectedFile],
+          handler: 'aura-handler',
+          stream: false,
+          openChat: false
+        });
+      } catch (err) {
+        loadingOverlay.classList.remove('visible');
+        if (err.errorType === 'USER_REJECTED_CONFIRMATION') {
+          showError('Lecture annulée.');
+        } else {
+          showError('Impossible de se connecter. Veuillez réessayer.');
+        }
+      }
+    });
+
+    function parseAndDisplayAura(content) {
+      try {
+        // Extract JSON from content
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('No JSON found');
+
+        const auraData = JSON.parse(jsonMatch[0]);
+
+        // Set center image
+        auraCenterImage.src = previewUrl;
+
+        // Set colors
+        const colors = auraData.colors.slice(0, 3);
+        while (colors.length < 3) colors.push('violet');
+
+        const color1 = auraColorMap[colors[0].toLowerCase()] || '#9d7cff';
+        const color2 = auraColorMap[colors[1].toLowerCase()] || '#ff6b9d';
+        const color3 = auraColorMap[colors[2].toLowerCase()] || '#4ecdc4';
+
+        auraDisplay.style.setProperty('--aura-color-1', color1);
+        auraDisplay.style.setProperty('--aura-color-2', color2);
+        auraDisplay.style.setProperty('--aura-color-3', color3);
+
+        // Display color badges
+        auraColors.innerHTML = colors.map((color, i) => `
+          <div class="color-badge">
+            <div class="color-circle" style="background: ${[color1, color2, color3][i]}"></div>
+            <span class="color-name">${color}</span>
+          </div>
+        `).join('');
+
+        // Set text
+        auraTitle.textContent = auraData.title || 'Votre Aura';
+        auraText.textContent = auraData.description || 'Une énergie mystérieuse émane de votre être.';
+
+        auraResult.classList.add('visible');
+
+      } catch (err) {
+        showError('Impossible de déchiffrer l\'aura. Veuillez réessayer avec une autre photo.');
+      }
+    }
+
+    function showError(message) {
+      errorMessage.textContent = message;
+      errorMessage.classList.add('visible');
+    }
+
+    // Reset
+    resetBtn.addEventListener('click', () => {
+      selectedFile = null;
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = null;
+
+      uploadZone.innerHTML = `
+        <input type="file" id="fileInput" accept="image/*">
+        <span class="upload-icon">✧</span>
+        <p class="upload-text">Déposez votre photo ici<br>ou cliquez pour sélectionner</p>
+      `;
+      uploadZone.classList.remove('has-image');
+
+      // Re-bind file input
+      const newFileInput = document.getElementById('fileInput');
+      newFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) handleFile(file);
+      });
+
+      generateBtn.disabled = true;
+      auraResult.classList.remove('visible');
+      errorMessage.classList.remove('visible');
+    });
+  </script>
+</body>
+    </html>
